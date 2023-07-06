@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <!-- This Pathfinder projects contains Bootstrap as the primary styling option -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+
+    <style>
+        /* Set the size of the div element that contains the map */
+        #map {
+            height: 94.25vh;
+            margin-left: 250px;
+            margin-right: 350px;
+        }
+
+        /* Style for the sidebar */
+        #sidebar {
+            height: 100vh;
+            width: 250px;
+            background-color: rgb(63, 63, 224);
+            position: fixed;
+            left: 0;
+            color: white;
+            padding: 20px;
+        }
+
+        /* Style for the upload button */
+        #upload-button {
+            background-color: white;
+            color: black;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        #upload-button:hover {
+            background-color: lightgray;
+        }
+
+        #sidebar .btn {
+            color: black;
+            background-color: white;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        #info-box {
+            height: 100vh;
+            width: 350px;
+            background-color: white;
+            position: fixed;
+            top: 0;
+            right: 0;
+            color: black;
+            padding: 20px;
+        }
+        #legend {
+            position: absolute;
+            bottom: 80px;
+            left: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            color: black;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .marker {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .red {
+            background-color: red;
+        }
+
+        .blue {
+            background-color: blue;
+        }
+
+        .yellow {
+            background-color: yellow;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div>
+            <a class="navbar-brand" href="#">Pathfinder Demo #2</a>
+        </div>
+    </nav>
+
+
+    <!-- The left sidebar -->
+    <div id="sidebar" class="d-flex flex-column">
+
+        <!-- The upload button and file input -->
+        <button id="upload-button" class="btn btn-primary"
+            onclick="document.getElementById('getFile').click()">Upload</button>
+        <input type='file' id='getFile' style='display: none' accept=".xlsx,.xls,.csv">
+        <a class="btn" href="#" onclick="mainToggle()">Active View</a>
+        <a class="btn" href="#">Claims View</a>
+        
+        <select id="state-filter" class="form-control">
+            <option value="">All States</option>
+            <option value="AL">Alabama</option>
+            <option value="AK">Alaska</option>
+            <option value="AZ">Arizona</option>
+            <option value="AR">Arkansas</option>
+            <option value="CA">California</option>
+            <option value="CO">Colorado</option>
+            <option value="CT">Connecticut</option>
+            <option value="FL">Florida</option>
+            <option value="GA">Georgia</option>
+            <option value="HI">Hawaii</option>
+            <option value="ID">Idaho</option>
+            <option value="IL">Illinois</option>
+            <option value="IN">Indiana</option>
+            <option value="IA">Iowa</option>
+            <option value="KS">Kansas</option>
+            <option value="KY">Kentucky</option>
+            <option value="LA">Louisiana</option>
+            <option value="ME">Maine</option>
+            <option value="MD">Maryland</option>
+            <option value="MA">Massachusetts</option>
+            <option value="MI">Michigan</option>
+            <option value="MN">Minnesota</option>
+            <option value="MS">Mississippi</option>
+            <option value="MO">Missouri</option>
+            <option value="MT">Montana</option>
+            <option value="NE">Nebraska</option>
+            <option value="NV">Nevada</option>
+            <option value="NH">New Hampshire</option>
+            <option value="NJ">New Jersey</option>
+            <option value="NM">New Mexico</option>
+            <option value="NY">New York</option>
+            <option value="NC">North Carolina</option>
+            <option value="ND">North Dakota</option>
+            <option value="OH">Ohio</option>
+            <option value="OK">Oklahoma</option>
+            <option value="OR">Oregon</option>
+            <option value="PA">Pennsylvania</option>
+            <option value="RI">Rhode Island</option>
+            <option value="SC">South Carolina</option>
+            <option value="SD">South Dakota</option>
+            <option value="TN">Tennessee</option>
+            <option value="TX">Texas</option>
+            <option value="UT">Utah</option>
+            <option value="VT">Vermont</option>
+            <option value="VA">Virginia</option>
+            <option value="WA">Washington</option>
+            <option value="WV">West Virginia</option>
+            <option value="WI">Wisconsin</option>
+            <option value="WY">Wyoming</option>
+
+            <!-- Add more options for other states -->
+        </select>
+        <div id="legend">
+            <h5>Legend</h5>
+            <div class="legend-item">
+                <div class="marker red"></div>
+                <span>Low Priority</span>
+            </div>
+            <div class="legend-item">
+                <div class="marker blue"></div>
+                <span>Moderate Priority</span>
+            </div>
+            <div class="legend-item">
+                <div class="marker yellow"></div>
+                <span>High Priority</span>
+            </div>
+        </div>
+    </div>
+
+    <!--The div element for the map -->
+    <div id="map"></div>
+
+    <!-- The box for displaying information -->
+    <div id="info-box">
+        <div class="marker-info">
+            <h2>Marker Information</h2>
+            <div class="marker-address">
+                <strong>Address:</strong> <span id="marker-address"></span>
+            </div>
+            <div class="marker-contact">
+                <strong>Contact:</strong> <span id="marker-contact"></span>
+            </div>
+            <div class="marker-priority">
+                <strong>Priority:</strong> <span id="marker-priority"></span>
+            </div>
+            <div class="marker-status">
+                <strong>Status:</strong> <span id="marker-status"></span>
+            </div>
+            <div class="marker-claim-type">
+                <strong>Claim Type:</strong> <span id="marker-claim-type"></span>
+            </div>
+            <div class="marker-carrier">
+                <strong>Insurance Carrier:</strong> <span id="marker-carrier"></span>
+            </div>
+            <div class="marker-agency">
+                <strong>Insurance Agency:</strong> <span id="marker-agency"></span>
+            </div>
+            <div class="marker-claim-id">
+                <strong>Claim ID:</strong> <span id="marker-claim-id"></span>
+            </div>
+            <div class="marker-adjuster">
+                <strong>Adjuster:</strong> <span id="marker-adjuster"></span>
+            </div>
+            <div class="marker-agent-phone">
+                <strong>Agent Phone:</strong> <span id="marker-agent-phone"></span>
+            </div>
+            <div class="marker-special-notes">
+                <strong>Special Notes:</strong> <span id="marker-special-notes"></span>
+            </div>
+        </div>
+        <hr class="divider">
+        <div class="payments-expenses">
+            <h3>Payments/Expenses</h3>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Paid Amount</th>
+                        <th>Reserved Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th>Indemnity</th>
+                        <td><span id="payment-indemnity-paid"></span></td>
+                        <td><span id="payment-indemnity-reserved"></span></td>
+                    </tr>
+                    <tr>
+                        <th>Expenses</th>
+                        <td><span id="payment-expenses-paid"></span></td>
+                        <td><span id="payment-expenses-reserved"></span></td>
+                    </tr>
+                    <tr>
+                        <th>Subrogation</th>
+                        <td><span id="payment-subrogation-paid"></span></td>
+                        <td><span id="payment-subrogation-reserved"></span></td>
+                    </tr>
+                    <tr>
+                        <th>Reinsurance</th>
+                        <td><span id="payment-reinsurance-paid"></span></td>
+                        <td><span id="payment-reinsurance-reserved"></span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="claim-details">
+            <h3>Claim Details</h3>
+            <div class="marker-duration">
+                <strong>Claim Duration:</strong> <span id="marker-duration"></span>
+            </div>
+            <div class="marker-date-reported">
+                <strong>Date Reported:</strong> <span id="marker-date-reported"></span>
+            </div>
+            <div class="marker-date-closed">
+                <strong>Date Closed:</strong> <span id="marker-date-closed"></span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+
+    <script>
+        // Initialize and add the map
+        let map;
+        let marker = [];
+        let geocoder;
+        let responseDiv;
+        let response;
+        let elevator;
+        // Define an array of marker colors
+        const markerColors = ["red", "blue", "yellow"];
+
+        function initMap() {
+            const stateFilter = document.getElementById("state-filter");
+            stateFilter.addEventListener("change", function () {
+                filterMarkersByState(this.value);
+            });
+
+            map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 4,
+                center: { lat: 39.8283, lng: -98.5795 },
+                mapTypeControl: false,
+                mapTypeId: 'hybrid',
+            });
+            geocoder = new google.maps.Geocoder();
+            elevator = new google.maps.ElevationService();
+
+            const inputText = document.createElement("input");
+
+            inputText.type = "text";
+            inputText.placeholder = "Enter a location";
+            inputText.style.width = "200px";
+            inputText.style.padding = "5px";
+            inputText.style.height = "30px";
+            inputText.style.marginTop = "30px";
+            inputText.style.marginLeft = "30px";
+
+            const submitButton = document.createElement("input");
+
+            submitButton.type = "button";
+            submitButton.value = "Geocode";
+            submitButton.style.backgroundColor = "#007bff";
+            submitButton.style.color = "white";
+            submitButton.style.border = "none";
+            submitButton.style.padding = "5px";
+            submitButton.style.cursor = "pointer";
+            submitButton.style.marginLeft = "5px";
+            submitButton.style.height = "30px";
+            submitButton.style.marginTop = "30px";
+
+            submitButton.onmouseover = function () {
+                this.style.backgroundColor = "#0056b3";
+            }
+            submitButton.onmouseout = function () {
+                this.style.backgroundColor = "#007bff";
+            }
+
+            const clearButton = document.createElement("input");
+
+            clearButton.type = "button";
+            clearButton.value = "Clear";
+            clearButton.classList.add("button", "button-secondary");
+            clearButton.style.backgroundColor = "#007bff";
+            clearButton.style.color = "white";
+            clearButton.style.border = "none";
+            clearButton.style.padding = "5px";
+            clearButton.style.cursor = "pointer";
+            clearButton.style.marginLeft = "5px";
+            clearButton.style.height = "30px";
+            clearButton.style.marginTop = "30px";
+
+            clearButton.onmouseover = function () {
+                this.style.backgroundColor = "#0056b3";
+            }
+            clearButton.onmouseout = function () {
+                this.style.backgroundColor = "#007bff";
+            }
+
+
+            response = document.createElement("pre");
+            response.id = "response";
+            response.innerText = "";
+            responseDiv = document.createElement("div");
+            responseDiv.id = "response-container";
+            //responseDiv.appendChild(response);
+
+            const instructionsElement = document.createElement("p");
+
+            instructionsElement.id = "instructions";
+            //instructionsElement.innerHTML = "<strong>Instructions</strong>: Enter an address in the textbox to geocode or click on the map to reverse geocode.";
+            map.controls[google.maps.ControlPosition.TOP_LEFT].push(inputText);
+            map.controls[google.maps.ControlPosition.TOP_LEFT].push(submitButton);
+            map.controls[google.maps.ControlPosition.TOP_LEFT].push(clearButton);
+            map.controls[google.maps.ControlPosition.LEFT_TOP].push(instructionsElement);
+            map.controls[google.maps.ControlPosition.LEFT_TOP].push(responseDiv);
+            marker = new google.maps.Marker({
+                map,
+            });
+            map.addListener("click", (e) => {
+                geocode({ location: e.latLng });
+            });
+            submitButton.addEventListener("click", () =>
+                geocode({ address: inputText.value })
+            );
+            clearButton.addEventListener("click", () => {
+                clear();
+            });
+            clear();
+        }
+
+        function clear() {
+            marker.setMap(null);
+            responseDiv.style.display = "none";
+        }
+
+
+        /*
+            Create a geocoded marker for some arbitrary address
+            
+            This address can be inputted in two ways:
+            1. Directly type the address into the search bar and press "Geocode"
+            2. Upload a dataset that contains address and it will automatically geocode them
+
+            There is also an information window available for each marker that contains:
+            1. Address
+            2. Elevation
+            3. Other basic geospatial data
+
+        */
+        function geocode(request) {
+            geocoder
+                .geocode(request)
+                .then((result) => {
+                    const { results } = result;
+                    const location = results[33].geometry.location;
+
+                    markerColor = setMarkerColor(result[30])
+
+                    // Create a new marker with the selected color
+                    const newMarker = new google.maps.Marker({
+                        map,
+                        position: location,
+                        icon: {
+                            url: "http://maps.google.com/mapfiles/ms/icons/" + markerColor + "-dot.png",
+                            fillColor: markerColor,
+                            fillOpacity: 1,
+                            strokeWeight: 0,
+                            scale: 8,
+                        },
+                    });
+                    newMarker.set("state", result[29]); // Where state appears in the DS
+                    // Inside the addMarker function
+                    marker.addListener("click", function () {
+                        // Set marker information
+                        document.getElementById("marker-address").textContent = location.address;
+                        document.getElementById("marker-contact").textContent = location.contact;
+                        document.getElementById("marker-priority").textContent = location.priority;
+                        document.getElementById("marker-status").textContent = location.status;
+                        document.getElementById("marker-claim-type").textContent = location.claimType;
+                        document.getElementById("marker-carrier").textContent = location.carrier;
+                        document.getElementById("marker-agency").textContent = location.agency;
+                        document.getElementById("marker-claim-id").textContent = result[35];
+                        document.getElementById("marker-adjuster").textContent = location.adjuster;
+                        document.getElementById("marker-agent-phone").textContent = location.agentPhone;
+                        document.getElementById("marker-special-notes").textContent = location.specialNotes;
+
+                        // Set payments/expenses information
+                        document.getElementById("payment-indemnity-paid").textContent = result[23];
+                        document.getElementById("payment-indemnity-reserved").textContent = result[30];
+                        document.getElementById("payment-expenses-paid").textContent = result[24];
+                        document.getElementById("payment-expenses-reserved").textContent = location.payments.expenses.reserved;
+                        document.getElementById("payment-subrogation-paid").textContent = location.payments.subrogation.paid;
+                        document.getElementById("payment-subrogation-reserved").textContent = result[31];
+                        document.getElementById("payment-reinsurance-paid").textContent = location.payments.reinsurance.paid;
+                        document.getElementById("payment-reinsurance-reserved").textContent = location.payments.reinsurance.reserved;
+
+                        // Set claim details
+                        document.getElementById("marker-duration").textContent = location.duration;
+                        document.getElementById("marker-date-reported").textContent = result[7];
+                        document.getElementById("marker-date-closed").textContent = location.dateClosed;
+                    });
+
+                    markers.push(newMarker);
+                })
+                .catch((e) => {
+                    alert("Geocode was not successful for the following reason: " + e);
+                });
+        }
+
+        function setMarkerColor(claimAmount) {
+            let markerColor;
+
+            if (claimAmount < 200000) {
+                markerColor = "red";
+            } else if (claimAmount >= 200000 && claimAmount <= 250000) {
+                markerColor = "blue";
+            } else {
+                markerColor = "yellow";
+            }
+
+            return markerColor;
+        }
+
+
+        /*
+            After a file has been uploaded to the web app, we will parse the dataset to find the address information. For now, the dataset will be contains within an Excel sheet.
+        */
+        document.getElementById('getFile').addEventListener('change', function (evt) {
+            let file = evt.target.files[0];
+            let reader = new FileReader();
+            reader.onload = function (e) {
+                let data = new Uint8Array(e.target.result);
+                let workbook = XLSX.read(data, { type: 'array' });
+
+                // Get the first sheet
+                let worksheet = workbook.Sheets[workbook.SheetNames[0]];
+
+                // Convert to JSON
+                let json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                // Assume zip code is in the first column and add country code
+                let zipCodes = json.map(row => row[0] + ", US");
+
+                // Geocode each zip code
+                zipCodes.forEach(zipCode => {
+                    geocode({ 'address': zipCode });
+                });
+            };
+            reader.readAsArrayBuffer(file);
+        }, false);
+
+        function filterMarkersByState(state) {
+            markers.forEach(function (marker) {
+                const markerState = marker.get("state");
+                if (state === "" || markerState === state) {
+                    marker.setVisible(true);
+                } else {
+                    marker.setVisible(false);
+                }
+            });
+        }
+
+        window.initMap = initMap;
+
+        function mainToggle(){
+            window.location = 'main.html';
+        }
+    </script>
+
+    <!--Load the API from the specified URL
+    * The async attribute allows the browser to render the page while the API loads
+    * The key parameter will contain your own API key (which is not needed in this example)
+    * The callback parameter executes the initMap() function
+    * 
+    * Be sure that the Google Maps API Key contains AT LEAST the following APIs:
+    * 1. Geocoding API
+    * 2. Maps Elevation API
+    * 3. Maps JavaScript API
+    * 4. Places API
+    -->
+
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAQ6wlMn0Hs2y5HOQSvGYlbfieBJq79KDA&libraries=geometry&callback=initMap"></script>
+
+    <!-- This is OPTIONAL JS scripts for Popper and Bootstrap -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+</body>
+
+</html>
