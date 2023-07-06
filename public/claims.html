@@ -9,7 +9,7 @@
     <style>
         /* Set the size of the div element that contains the map */
         #map {
-            height: 94.25vh;
+            height: 95.4vh;
             margin-left: 250px;
             margin-right: 350px;
         }
@@ -52,7 +52,7 @@
             width: 350px;
             background-color: white;
             position: fixed;
-            top: 0;
+            top: 60px;
             right: 0;
             color: black;
             padding: 20px;
@@ -101,6 +101,9 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div>
             <a class="navbar-brand" href="#">Pathfinder Demo #2</a>
+        </div>
+        <div class="ml-auto">
+            <button class="btn btn-outline-primary" onclick="logout()">Logout</button>
         </div>
     </nav>
 
@@ -524,6 +527,11 @@
         function mainToggle(){
             window.location = 'main.html';
         }
+
+        function logout(){
+            window.location = 'index.html';
+        }
+
     </script>
 
     <!--Load the API from the specified URL
