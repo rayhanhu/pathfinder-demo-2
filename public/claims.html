@@ -57,6 +57,7 @@
             color: black;
             padding: 20px;
         }
+
         #legend {
             position: absolute;
             bottom: 80px;
@@ -117,7 +118,7 @@
         <input type='file' id='getFile' style='display: none' accept=".xlsx,.xls,.csv">
         <a class="btn" href="#" onclick="mainToggle()">Active View</a>
         <a class="btn" href="#">Claims View</a>
-        
+
         <select id="state-filter" class="form-control">
             <option value="">All States</option>
             <option value="AL">Alabama</option>
@@ -397,6 +398,55 @@
 
 
         /*
+    After a file has been uploaded to the web app, we will parse the dataset to find the address information. For now, the dataset will be contains within an Excel sheet.
+*/
+        document.getElementById('getFile').addEventListener('change', function (evt) {
+            let file = evt.target.files[0];
+            let reader = new FileReader();
+            reader.onload = function (e) {
+                let data = new Uint8Array(e.target.result);
+                let workbook = XLSX.read(data, { type: 'array' });
+
+                // Get the first sheet
+                let worksheet = workbook.Sheets[workbook.SheetNames[0]];
+
+                // Convert to JSON
+                let json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                // Assume zip code is in the first column and add country code
+                let zipCodes = json.map(row => row[33] + ", US");
+
+                // This is where we set the marker color
+                // let markerColor = "red";
+                // if ((row => row[30]) >= 200000 && (row => row[30]) <= 250000) {
+                //     markerColor = "blue";
+                // }
+                // if ((row => row[30]) >= 250000) {
+                //     markerColor = "yellow";
+                // }
+
+                // let claimAmount = json.map(row => row[30]);
+                let claimAmount = row => row[30];
+                let markerColor;
+
+                if (claimAmount < 200000) {
+                    markerColor = "red";
+                } else if (claimAmount >= 200000 && claimAmount <= 250000) {
+                    markerColor = "blue";
+                } else {
+                    markerColor = "yellow";
+                }
+
+                // Geocode each zip code
+                zipCodes.forEach(zipCode => {
+                    geocode({ 'address': zipCode }, markerColor);
+                });
+            };
+            reader.readAsArrayBuffer(file);
+        }, false);
+
+
+        /*
             Create a geocoded marker for some arbitrary address
             
             This address can be inputted in two ways:
@@ -472,90 +522,81 @@
         //         });
         // }
 
-        function geocode(request) {
+        function geocode(request, markerColor) {
             geocoder
                 .geocode(request)
                 .then((result) => {
-                const { results } = result;
+                    const { results } = result;
 
-                // Create a new marker for each geocode result
-                const newMarker = new google.maps.Marker({
-                    map,
-                    position: results[0].geometry.location
-                });
+                    // Create a new marker for each geocode result
+                    // const newMarker = new google.maps.Marker({
+                    //     map,
+                    //     position: results[0].geometry.location
+                    // });
+                    //             // Create a new marker with the selected color
 
-                const location = {lat: results[0].geometry.location.lat(), lng: results[0].geometry.location.lng()};
-                elevator.getElevationForLocations({
-                    'locations': [location]
-                }, function(results, status) {
-                    if (status === 'OK') {
-                        // Retrieve the first returned result
-                        if (results[0]) {
-                            // Create an infowindow for each marker with elevation
-                            const infowindow = new google.maps.InfoWindow({
-                                content: "Address: " + request.address + "<br>Elevation: " + results[0].elevation + " meters"
-                            });
 
-                            // Attach the infowindow to marker click event
-                            newMarker.addListener('click', function() {
-                                infowindow.open(map, newMarker);
-                            });
+                    // markerColor = setMarkerColor(results[0].geometry.location);
+
+                    const newMarker = new google.maps.Marker({
+                        map,
+                        position: results[0].geometry.location,
+                        icon: {
+                            url: "http://maps.google.com/mapfiles/ms/icons/" + markerColor + "-dot.png",
+                            fillColor: markerColor,
+                            fillOpacity: 1,
+                            strokeWeight: 0,
+                            scale: 8,
+                        },
+                    });
+
+                    const location = { lat: results[0].geometry.location.lat(), lng: results[0].geometry.location.lng() };
+                    elevator.getElevationForLocations({
+                        'locations': [location]
+                    }, function (results, status) {
+                        if (status === 'OK') {
+                            // Retrieve the first returned result
+                            if (results[0]) {
+                                // Create an infowindow for each marker with elevation
+                                const infowindow = new google.maps.InfoWindow({
+                                    content: "Address: " + request.address + "<br>Elevation: " + results[0].elevation + " meters"
+                                });
+
+                                // Attach the infowindow to marker click event
+                                newMarker.addListener('click', function () {
+                                    infowindow.open(map, newMarker);
+                                });
+                            } else {
+                                alert('No results found');
+                            }
                         } else {
-                            alert('No results found');
+                            alert('Elevation service failed due to: ' + status);
                         }
-                    } else {
-                        alert('Elevation service failed due to: ' + status);
-                    }
-                });
-                responseDiv.style.display = "block";
-                response.innerText = JSON.stringify(result, null, 2);
-            })
+                    });
+                    responseDiv.style.display = "block";
+                    response.innerText = JSON.stringify(result, null, 2);
+                })
                 .catch((e) => {
-                alert("Geocode was not successful for the following reason: " + e);
-            });
-        }
-
-        function setMarkerColor(claimAmount) {
-            let markerColor;
-
-            if (claimAmount < 200000) {
-                markerColor = "red";
-            } else if (claimAmount >= 200000 && claimAmount <= 250000) {
-                markerColor = "blue";
-            } else {
-                markerColor = "yellow";
-            }
-
-            return markerColor;
-        }
-
-
-        /*
-            After a file has been uploaded to the web app, we will parse the dataset to find the address information. For now, the dataset will be contains within an Excel sheet.
-        */
-        document.getElementById('getFile').addEventListener('change', function (evt) {
-            let file = evt.target.files[0];
-            let reader = new FileReader();
-            reader.onload = function (e) {
-                let data = new Uint8Array(e.target.result);
-                let workbook = XLSX.read(data, { type: 'array' });
-
-                // Get the first sheet
-                let worksheet = workbook.Sheets[workbook.SheetNames[0]];
-
-                // Convert to JSON
-                let json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-                // Assume zip code is in the first column and add country code
-                let zipCodes = json.map(row => row[33] + ", US");
-
-                // Geocode each zip code
-                zipCodes.forEach(zipCode => {
-                    geocode({'address': zipCode});
+                    alert("Geocode was not successful for the following reason: " + e);
                 });
-            };
-            reader.readAsArrayBuffer(file);
-        }, false);
+        }
+
+        // function setMarkerColor(claimAmount) {
+        //     let markerColor;
+
+        //     if (claimAmount < 200000) {
+        //         markerColor = "red";
+        //     } else if (claimAmount >= 200000 && claimAmount <= 250000) {
+        //         markerColor = "blue";
+        //     } else {
+        //         markerColor = "yellow";
+        //     }
+
+        //     return markerColor;
+        // }
+
+
+
 
         function filterMarkersByState(state) {
             markers.forEach(function (marker) {
@@ -570,11 +611,11 @@
 
         window.initMap = initMap;
 
-        function mainToggle(){
+        function mainToggle() {
             window.location = 'main.html';
         }
 
-        function logout(){
+        function logout() {
             window.location = 'index.html';
         }
 
