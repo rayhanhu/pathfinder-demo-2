@@ -415,32 +415,25 @@
 
                 // Assume zip code is in the first column and add country code
                 let zipCodes = json.map(row => row[33] + ", US");
-
-                // This is where we set the marker color
-                // let markerColor = "red";
-                // if ((row => row[30]) >= 200000 && (row => row[30]) <= 250000) {
-                //     markerColor = "blue";
-                // }
-                // if ((row => row[30]) >= 250000) {
-                //     markerColor = "yellow";
-                // }
-
-                // let claimAmount = json.map(row => row[30]);
-                let claimAmount = row => row[30];
+                let claimAmount = json.map(row => row[30]);
                 let markerColor;
+                let counter = 0;
+                window.alert(claimAmount);
 
-                if (claimAmount < 200000) {
-                    markerColor = "red";
-                } else if (claimAmount >= 200000 && claimAmount <= 250000) {
-                    markerColor = "blue";
-                } else {
-                    markerColor = "yellow";
-                }
-
-                // Geocode each zip code
+                // Geocode each zip code and marker color
                 zipCodes.forEach(zipCode => {
+                    let amount = parseInt(json[counter + 1][30]);
+                    let markerColor;
+                    if (amount < 200000) {
+                        markerColor = "red";
+                    } else if (amount >= 200000 && amount <= 250000) {
+                        markerColor = "blue";
+                    } else {
+                        markerColor = "yellow";
+                    }
                     geocode({ 'address': zipCode }, markerColor);
                 });
+
             };
             reader.readAsArrayBuffer(file);
         }, false);
