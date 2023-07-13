@@ -423,13 +423,15 @@
                 // Geocode each zip code and marker color
                 zipCodes.forEach(zipCode => {
                     let amount = parseInt(json[counter + 1][30]);
-                    let markerColor;
                     if (amount < 200000) {
                         markerColor = "red";
+                        window.alert("it was red");
                     } else if (amount >= 200000 && amount <= 250000) {
                         markerColor = "blue";
+                        window.alert("it was blue");
                     } else {
                         markerColor = "yellow";
+                        window.alert("it was yellow");
                     }
                     geocode({ 'address': zipCode }, markerColor);
                 });
