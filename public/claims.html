@@ -292,10 +292,11 @@
         let elevator;
 
         function initMap() {
-            const stateFilter = document.getElementById("state-filter");
-            stateFilter.addEventListener("change", function () {
-                filterMarkersByState(stateFilter.value);
-            });
+            // const stateFilter = document.getElementById("state-filter");
+            // stateFilter.addEventListener("change", function () {
+            //     filterMarkersByState(this.value);
+            // });
+            // this.filterMarkerByState("state-filter".value)
 
             map = new google.maps.Map(document.getElementById("map"), {
                 zoom: 4,
@@ -413,6 +414,7 @@
                 // Assume zip code is in the first column and add country code
                 let zipCodes = json.map(row => row[33] + ", US");
                 let claimAmount = json.map(row => row[30]);
+                let state = json.map(row => row[29]);
                 // let claimAmount;
                 let markerColor;
                 let counter = 0;
@@ -428,47 +430,16 @@
                     } else {
                         markerColor = "yellow";
                     }
-                    geocode({ 'address': zipCode }, markerColor);
+                    let stateCheck = document.getElementById("state-filter");
+                    let stateBool = state.filterMarkersByState(stateCheck);
+                    geocode({ 'address': zipCode }, markerColor, stateBool);
                 });
 
             };
             reader.readAsArrayBuffer(file);
         }, false);
 
-
-
-        //             newMarker.set("state", result[29]); // Where state appears in the DS
-        //             // Inside the addMarker function
-        //             marker.addListener("click", function () {
-        //                 // Set marker information
-        //                 // document.getElementById("marker-address").textContent = location.address;
-        //                 // document.getElementById("marker-contact").textContent = location.contact;
-        //                 // document.getElementById("marker-priority").textContent = location.priority;
-        //                 // document.getElementById("marker-status").textContent = location.status;
-        //                 // document.getElementById("marker-claim-type").textContent = location.claimType;
-        //                 // document.getElementById("marker-carrier").textContent = location.carrier;
-        //                 // document.getElementById("marker-agency").textContent = location.agency;
-        //                 document.getElementById("marker-claim-id").textContent = result[35];
-        //                 // document.getElementById("marker-adjuster").textContent = location.adjuster;
-        //                 // document.getElementById("marker-agent-phone").textContent = location.agentPhone;
-        //                 // document.getElementById("marker-special-notes").textContent = location.specialNotes;
-
-        //                 // Set payments/expenses information
-        //                 document.getElementById("payment-indemnity-paid").textContent = result[23];
-        //                 document.getElementById("payment-indemnity-reserved").textContent = result[30];
-        //                 document.getElementById("payment-expenses-paid").textContent = result[24];
-        //                 // document.getElementById("payment-expenses-reserved").textContent = location.payments.expenses.reserved;
-        //                 // document.getElementById("payment-subrogation-paid").textContent = location.payments.subrogation.paid;
-        //                 document.getElementById("payment-subrogation-reserved").textContent = result[31];
-        //                 // document.getElementById("payment-reinsurance-paid").textContent = location.payments.reinsurance.paid;
-        //                 // document.getElementById("payment-reinsurance-reserved").textContent = location.payments.reinsurance.reserved;
-
-        //                 // Set claim details
-        //                 // document.getElementById("marker-duration").textContent = location.duration;
-        //                 document.getElementById("marker-date-reported").textContent = result[7];
-        //                 // document.getElementById("marker-date-closed").textContent = location.dateClosed;
-
-        function geocode(request, markerColor) {
+        function geocode(request, markerColor, stateBool) {
             geocoder
                 .geocode(request)
                 .then((result) => {
@@ -483,6 +454,7 @@
                             strokeWeight: 0,
                             scale: 8,
                         },
+                        visible: stateBool
                     });
 
                     const location = { lat: results[0].geometry.location.lat(), lng: results[0].geometry.location.lng() };
@@ -510,6 +482,7 @@
                     });
                     responseDiv.style.display = "block";
                     response.innerText = JSON.stringify(result, null, 2);
+                    newMarker.setVisible()
                 })
                 .catch((e) => {
                     alert("Geocode was not successful for the following reason: " + e);
@@ -527,16 +500,20 @@
         //     }
         //     return markerColor;
         // }
-
-
+        // function filterMarkersByState(state) {
+        //     markers.forEach(function (marker) {
+        //         const markerState = marker.get("state");
+        //         if (state === "" || markerState === state) {
+        //             marker.setVisible(true);
+        //         } else {
+        //             marker.setVisible(false);
+        //         }
+        //     });
+        // }
         function filterMarkersByState(state) {
-            markers.forEach(function (marker) {
+            return markers.some(function (marker) {
                 const markerState = marker.get("state");
-                if (state === "" || markerState === state) {
-                    marker.setVisible(true);
-                } else {
-                    marker.setVisible(false);
-                }
+                return state === "" || markerState === state;
             });
         }
 
