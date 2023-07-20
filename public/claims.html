@@ -290,13 +290,11 @@
         let responseDiv;
         let response;
         let elevator;
-        // Define an array of marker colors
-        const markerColors = ["red", "blue", "yellow"];
 
         function initMap() {
             const stateFilter = document.getElementById("state-filter");
             stateFilter.addEventListener("change", function () {
-                filterMarkersByState(this.value);
+                filterMarkersByState(stateFilter.value);
             });
 
             map = new google.maps.Map(document.getElementById("map"), {
@@ -396,7 +394,6 @@
             responseDiv.style.display = "none";
         }
 
-
         /*
     After a file has been uploaded to the web app, we will parse the dataset to find the address information. For now, the dataset will be contains within an Excel sheet.
 */
@@ -416,22 +413,20 @@
                 // Assume zip code is in the first column and add country code
                 let zipCodes = json.map(row => row[33] + ", US");
                 let claimAmount = json.map(row => row[30]);
+                // let claimAmount;
                 let markerColor;
                 let counter = 0;
-                window.alert(claimAmount);
 
                 // Geocode each zip code and marker color
                 zipCodes.forEach(zipCode => {
-                    let amount = parseInt(json[counter + 1][30]);
+                    counter = counter + 1;
+                    let amount = parseInt(claimAmount[counter]);
                     if (amount < 200000) {
                         markerColor = "red";
-                        window.alert("it was red");
                     } else if (amount >= 200000 && amount <= 250000) {
                         markerColor = "blue";
-                        window.alert("it was blue");
                     } else {
                         markerColor = "yellow";
-                        window.alert("it was yellow");
                     }
                     geocode({ 'address': zipCode }, markerColor);
                 });
@@ -441,43 +436,7 @@
         }, false);
 
 
-        /*
-            Create a geocoded marker for some arbitrary address
-            
-            This address can be inputted in two ways:
-            1. Directly type the address into the search bar and press "Geocode"
-            2. Upload a dataset that contains address and it will automatically geocode them
 
-            There is also an information window available for each marker that contains:
-            1. Address
-            2. Elevation
-            3. Other basic geospatial data
-
-        */
-        // function geocode(request) {
-        //     geocoder
-        //         .geocode(request)
-        //         .then((result) => {
-        //             const { results } = result;
-
-        //             if (results.length > 0) {
-        //                 const location = results[0].geometry.location;
-        //             }
-
-        //             markerColor = setMarkerColor(results[30])
-
-        //             // Create a new marker with the selected color
-        //             const newMarker = new google.maps.Marker({
-        //                 map,
-        //                 position: location,
-        //                 icon: {
-        //                     url: "http://maps.google.com/mapfiles/ms/icons/" + markerColor + "-dot.png",
-        //                     fillColor: markerColor,
-        //                     fillOpacity: 1,
-        //                     strokeWeight: 0,
-        //                     scale: 8,
-        //                 },
-        //             });
         //             newMarker.set("state", result[29]); // Where state appears in the DS
         //             // Inside the addMarker function
         //             marker.addListener("click", function () {
@@ -508,31 +467,12 @@
         //                 // document.getElementById("marker-duration").textContent = location.duration;
         //                 document.getElementById("marker-date-reported").textContent = result[7];
         //                 // document.getElementById("marker-date-closed").textContent = location.dateClosed;
-        //             });
-
-        //             //marker.push(newMarker);
-        //         })
-        //         .catch((e) => {
-        //             alert("Geocode was not successful for the following reason: " + e);
-        //         });
-        // }
 
         function geocode(request, markerColor) {
             geocoder
                 .geocode(request)
                 .then((result) => {
                     const { results } = result;
-
-                    // Create a new marker for each geocode result
-                    // const newMarker = new google.maps.Marker({
-                    //     map,
-                    //     position: results[0].geometry.location
-                    // });
-                    //             // Create a new marker with the selected color
-
-
-                    // markerColor = setMarkerColor(results[0].geometry.location);
-
                     const newMarker = new google.maps.Marker({
                         map,
                         position: results[0].geometry.location,
@@ -578,7 +518,6 @@
 
         // function setMarkerColor(claimAmount) {
         //     let markerColor;
-
         //     if (claimAmount < 200000) {
         //         markerColor = "red";
         //     } else if (claimAmount >= 200000 && claimAmount <= 250000) {
@@ -586,11 +525,8 @@
         //     } else {
         //         markerColor = "yellow";
         //     }
-
         //     return markerColor;
         // }
-
-
 
 
         function filterMarkersByState(state) {
