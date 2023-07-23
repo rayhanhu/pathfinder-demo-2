@@ -292,11 +292,7 @@
         let elevator;
 
         function initMap() {
-            // const stateFilter = document.getElementById("state-filter");
-            // stateFilter.addEventListener("change", function () {
-            //     filterMarkersByState(this.value);
-            // });
-            // this.filterMarkerByState("state-filter".value)
+            stateFilter = document.getElementById("state-filter");
 
             map = new google.maps.Map(document.getElementById("map"), {
                 zoom: 4,
@@ -395,9 +391,8 @@
             responseDiv.style.display = "none";
         }
 
-        /*
-    After a file has been uploaded to the web app, we will parse the dataset to find the address information. For now, the dataset will be contains within an Excel sheet.
-*/
+
+        //After a file has been uploaded to the web app, we will parse the dataset to find the address information. For now, the dataset will be contains within an Excel sheet.
         document.getElementById('getFile').addEventListener('change', function (evt) {
             let file = evt.target.files[0];
             let reader = new FileReader();
@@ -415,10 +410,8 @@
                 let zipCodes = json.map(row => row[33] + ", US");
                 let claimAmount = json.map(row => row[30]);
                 let state = json.map(row => row[29]);
-                // let claimAmount;
                 let markerColor;
                 let counter = 0;
-
                 // Geocode each zip code and marker color
                 zipCodes.forEach(zipCode => {
                     counter = counter + 1;
@@ -430,16 +423,15 @@
                     } else {
                         markerColor = "yellow";
                     }
-                    let stateCheck = document.getElementById("state-filter");
-                    let stateBool = state.filterMarkersByState(stateCheck);
-                    geocode({ 'address': zipCode }, markerColor, stateBool);
+                    if (stateFilter.value === "" || stateFilter.value === state[counter]) {
+                        geocode({ 'address': zipCode }, markerColor);
+                    }
                 });
-
             };
             reader.readAsArrayBuffer(file);
         }, false);
 
-        function geocode(request, markerColor, stateBool) {
+        function geocode(request, markerColor) {
             geocoder
                 .geocode(request)
                 .then((result) => {
@@ -454,7 +446,6 @@
                             strokeWeight: 0,
                             scale: 8,
                         },
-                        visible: stateBool
                     });
 
                     const location = { lat: results[0].geometry.location.lat(), lng: results[0].geometry.location.lng() };
@@ -488,35 +479,6 @@
                     alert("Geocode was not successful for the following reason: " + e);
                 });
         }
-
-        // function setMarkerColor(claimAmount) {
-        //     let markerColor;
-        //     if (claimAmount < 200000) {
-        //         markerColor = "red";
-        //     } else if (claimAmount >= 200000 && claimAmount <= 250000) {
-        //         markerColor = "blue";
-        //     } else {
-        //         markerColor = "yellow";
-        //     }
-        //     return markerColor;
-        // }
-        // function filterMarkersByState(state) {
-        //     markers.forEach(function (marker) {
-        //         const markerState = marker.get("state");
-        //         if (state === "" || markerState === state) {
-        //             marker.setVisible(true);
-        //         } else {
-        //             marker.setVisible(false);
-        //         }
-        //     });
-        // }
-        function filterMarkersByState(state) {
-            return markers.some(function (marker) {
-                const markerState = marker.get("state");
-                return state === "" || markerState === state;
-            });
-        }
-
         window.initMap = initMap;
 
         function mainToggle() {
