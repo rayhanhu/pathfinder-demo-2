@@ -118,7 +118,8 @@
         <input type='file' id='getFile' style='display: none' accept=".xlsx,.xls,.csv">
         <a class="btn" href="#" onclick="mainToggle()">Active View</a>
         <a class="btn" href="#">Claims View</a>
-
+        <br>
+        <h5>State Filter</h5>
         <select id="state-filter" class="form-control">
             <option value="">All States</option>
             <option value="AL">Alabama</option>
@@ -170,9 +171,16 @@
             <option value="WV">West Virginia</option>
             <option value="WI">Wisconsin</option>
             <option value="WY">Wyoming</option>
-
-            <!-- Add more options for other states -->
         </select>
+        <br>
+        <h5>Priority Filter</h5>
+        <select id="priority-filter" class="form-control">
+            <option value="">No Filter</option>
+            <option value="red">Low Priority</option>
+            <option value="blue">Medium Priority</option>
+            <option value="yellow">High Priority</option>
+        </select>
+
         <div id="legend">
             <h5>Legend</h5>
             <div class="legend-item">
@@ -181,7 +189,7 @@
             </div>
             <div class="legend-item">
                 <div class="marker blue"></div>
-                <span>Moderate Priority</span>
+                <span>Medium Priority</span>
             </div>
             <div class="legend-item">
                 <div class="marker yellow"></div>
@@ -293,6 +301,7 @@
 
         function initMap() {
             stateFilter = document.getElementById("state-filter");
+            priorityFilter = document.getElementById("priority-filter");
 
             map = new google.maps.Map(document.getElementById("map"), {
                 zoom: 4,
@@ -410,12 +419,16 @@
                 let zipCodes = json.map(row => row[33] + ", US");
                 let claimAmount = json.map(row => row[30]);
                 let state = json.map(row => row[29]);
+                stateChoice = stateFilter.value;
+                priorityColor = priorityFilter.value;
                 let markerColor;
                 let counter = 0;
                 // Geocode each zip code and marker color
                 zipCodes.forEach(zipCode => {
-                    counter = counter + 1;
                     let amount = parseInt(claimAmount[counter]);
+                    let currentState = state[counter]
+
+                    // Determine the priority level
                     if (amount < 200000) {
                         markerColor = "red";
                     } else if (amount >= 200000 && amount <= 250000) {
@@ -423,9 +436,14 @@
                     } else {
                         markerColor = "yellow";
                     }
-                    if (stateFilter.value === "" || stateFilter.value === state[counter]) {
-                        geocode({ 'address': zipCode }, markerColor);
+
+                    // Filter visibility
+                    if ((stateChoice === "" || stateChoice === currentState) && (priorityColor === "" || priorityColor === markerColor)) {
+                            geocode({ 'address': zipCode }, markerColor);
                     }
+
+                    // Stays at the end
+                    counter = counter + 1;
                 });
             };
             reader.readAsArrayBuffer(file);
