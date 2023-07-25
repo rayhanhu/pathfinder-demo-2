@@ -11,7 +11,6 @@
         #map {
             height: 95.4vh;
             margin-left: 250px;
-            margin-right: 350px;
         }
 
         /* Style for the sidebar */
@@ -201,93 +200,6 @@
     <!--The div element for the map -->
     <div id="map"></div>
 
-    <!-- The box for displaying information -->
-    <div id="info-box">
-        <div class="marker-info">
-            <h2>Marker Information</h2>
-            <div class="marker-address">
-                <strong>Address:</strong> <span id="marker-address"></span>
-            </div>
-            <div class="marker-contact">
-                <strong>Contact:</strong> <span id="marker-contact"></span>
-            </div>
-            <div class="marker-priority">
-                <strong>Priority:</strong> <span id="marker-priority"></span>
-            </div>
-            <div class="marker-status">
-                <strong>Status:</strong> <span id="marker-status"></span>
-            </div>
-            <div class="marker-claim-type">
-                <strong>Claim Type:</strong> <span id="marker-claim-type"></span>
-            </div>
-            <div class="marker-carrier">
-                <strong>Insurance Carrier:</strong> <span id="marker-carrier"></span>
-            </div>
-            <div class="marker-agency">
-                <strong>Insurance Agency:</strong> <span id="marker-agency"></span>
-            </div>
-            <div class="marker-claim-id">
-                <strong>Claim ID:</strong> <span id="marker-claim-id"></span>
-            </div>
-            <div class="marker-adjuster">
-                <strong>Adjuster:</strong> <span id="marker-adjuster"></span>
-            </div>
-            <div class="marker-agent-phone">
-                <strong>Agent Phone:</strong> <span id="marker-agent-phone"></span>
-            </div>
-            <div class="marker-special-notes">
-                <strong>Special Notes:</strong> <span id="marker-special-notes"></span>
-            </div>
-        </div>
-        <hr class="divider">
-        <div class="payments-expenses">
-            <h3>Payments/Expenses</h3>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th></th>
-                        <th>Paid Amount</th>
-                        <th>Reserved Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <th>Indemnity</th>
-                        <td><span id="payment-indemnity-paid"></span></td>
-                        <td><span id="payment-indemnity-reserved"></span></td>
-                    </tr>
-                    <tr>
-                        <th>Expenses</th>
-                        <td><span id="payment-expenses-paid"></span></td>
-                        <td><span id="payment-expenses-reserved"></span></td>
-                    </tr>
-                    <tr>
-                        <th>Subrogation</th>
-                        <td><span id="payment-subrogation-paid"></span></td>
-                        <td><span id="payment-subrogation-reserved"></span></td>
-                    </tr>
-                    <tr>
-                        <th>Reinsurance</th>
-                        <td><span id="payment-reinsurance-paid"></span></td>
-                        <td><span id="payment-reinsurance-reserved"></span></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <div class="claim-details">
-            <h3>Claim Details</h3>
-            <div class="marker-duration">
-                <strong>Claim Duration:</strong> <span id="marker-duration"></span>
-            </div>
-            <div class="marker-date-reported">
-                <strong>Date Reported:</strong> <span id="marker-date-reported"></span>
-            </div>
-            <div class="marker-date-closed">
-                <strong>Date Closed:</strong> <span id="marker-date-closed"></span>
-            </div>
-        </div>
-    </div>
-
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
 
     <script>
@@ -415,23 +327,28 @@
                 // Convert to JSON
                 let json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-                // Assume zip code is in the first column and add country code
+                // Assume columns are structured/shaped like the index of the column(listed as row)
                 let zipCodes = json.map(row => row[33] + ", US");
                 let claimAmount = json.map(row => row[30]);
                 let state = json.map(row => row[29]);
+                let dateOfLoss = json.map(row => row[7]); // I will truncate this later
+                
+                
+
                 stateChoice = stateFilter.value;
                 priorityColor = priorityFilter.value;
                 let markerColor;
                 let counter = 0;
                 // Geocode each zip code and marker color
+                //TODO: make this next line chunky
                 zipCodes.forEach(zipCode => {
                     let amount = parseInt(claimAmount[counter]);
-                    let currentState = state[counter]
+                    let currentState = state[counter];
 
                     // Determine the priority level
-                    if (amount < 200000) {
+                    if (amount < 150000) {
                         markerColor = "red";
-                    } else if (amount >= 200000 && amount <= 250000) {
+                    } else if (amount >= 150000 && amount < 250000) {
                         markerColor = "blue";
                     } else {
                         markerColor = "yellow";
@@ -439,7 +356,8 @@
 
                     // Filter visibility
                     if ((stateChoice === "" || stateChoice === currentState) && (priorityColor === "" || priorityColor === markerColor)) {
-                            geocode({ 'address': zipCode }, markerColor);
+                        //TODO: make this next line chunky, handle your data before the next line
+                        geocode({ 'address': zipCode }, markerColor);
                     }
 
                     // Stays at the end
@@ -449,6 +367,7 @@
             reader.readAsArrayBuffer(file);
         }, false);
 
+        //TODO: make this next line chunky
         function geocode(request, markerColor) {
             geocoder
                 .geocode(request)
@@ -474,8 +393,23 @@
                             // Retrieve the first returned result
                             if (results[0]) {
                                 // Create an infowindow for each marker with elevation
+                                //TODO: Make this chunky
                                 const infowindow = new google.maps.InfoWindow({
-                                    content: "Address: " + request.address + "<br>Elevation: " + results[0].elevation + " meters"
+                                    content: "<h2>Marker Information</h2>"
+                                    + "<br>Address: " + request.address 
+                                    + "<br>Elevation: " + results[0].elevation + " meters" 
+                                    + "<br>Contact: "
+                                    + "<br>Priority: "
+                                    + "<br>Status: "
+                                    + "<br>Claim Type: "
+                                    + "<br>Insurance Carrier: "
+                                    + "<br>Insurance Agency: "
+                                    + "<br>Claim ID: "
+                                    + "<br>Adjuster: "
+                                    + "<br>Agent Phone: "
+                                    + "<br>Special Notes: "
+                                    + "<br>Date Reported: "
+                                    + "<br>Date Closed: "
                                 });
 
                                 // Attach the infowindow to marker click event
