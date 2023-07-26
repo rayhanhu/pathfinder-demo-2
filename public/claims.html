@@ -11,7 +11,6 @@
         #map {
             height: 95.4vh;
             margin-left: 250px;
-            margin-right: 350px;
         }
 
         /* Style for the sidebar */
@@ -57,6 +56,7 @@
             color: black;
             padding: 20px;
         }
+
         #legend {
             position: absolute;
             bottom: 80px;
@@ -117,7 +117,8 @@
         <input type='file' id='getFile' style='display: none' accept=".xlsx,.xls,.csv">
         <a class="btn" href="#" onclick="mainToggle()">Active View</a>
         <a class="btn" href="#">Claims View</a>
-        
+        <br>
+        <h5>State Filter</h5>
         <select id="state-filter" class="form-control">
             <option value="">All States</option>
             <option value="AL">Alabama</option>
@@ -169,9 +170,16 @@
             <option value="WV">West Virginia</option>
             <option value="WI">Wisconsin</option>
             <option value="WY">Wyoming</option>
-
-            <!-- Add more options for other states -->
         </select>
+        <br>
+        <h5>Priority Filter</h5>
+        <select id="priority-filter" class="form-control">
+            <option value="">No Filter</option>
+            <option value="red">Low Priority</option>
+            <option value="blue">Medium Priority</option>
+            <option value="yellow">High Priority</option>
+        </select>
+
         <div id="legend">
             <h5>Legend</h5>
             <div class="legend-item">
@@ -180,7 +188,7 @@
             </div>
             <div class="legend-item">
                 <div class="marker blue"></div>
-                <span>Moderate Priority</span>
+                <span>Medium Priority</span>
             </div>
             <div class="legend-item">
                 <div class="marker yellow"></div>
@@ -192,93 +200,6 @@
     <!--The div element for the map -->
     <div id="map"></div>
 
-    <!-- The box for displaying information -->
-    <div id="info-box">
-        <div class="marker-info">
-            <h2>Marker Information</h2>
-            <div class="marker-address">
-                <strong>Address:</strong> <span id="marker-address"></span>
-            </div>
-            <div class="marker-contact">
-                <strong>Contact:</strong> <span id="marker-contact"></span>
-            </div>
-            <div class="marker-priority">
-                <strong>Priority:</strong> <span id="marker-priority"></span>
-            </div>
-            <div class="marker-status">
-                <strong>Status:</strong> <span id="marker-status"></span>
-            </div>
-            <div class="marker-claim-type">
-                <strong>Claim Type:</strong> <span id="marker-claim-type"></span>
-            </div>
-            <div class="marker-carrier">
-                <strong>Insurance Carrier:</strong> <span id="marker-carrier"></span>
-            </div>
-            <div class="marker-agency">
-                <strong>Insurance Agency:</strong> <span id="marker-agency"></span>
-            </div>
-            <div class="marker-claim-id">
-                <strong>Claim ID:</strong> <span id="marker-claim-id"></span>
-            </div>
-            <div class="marker-adjuster">
-                <strong>Adjuster:</strong> <span id="marker-adjuster"></span>
-            </div>
-            <div class="marker-agent-phone">
-                <strong>Agent Phone:</strong> <span id="marker-agent-phone"></span>
-            </div>
-            <div class="marker-special-notes">
-                <strong>Special Notes:</strong> <span id="marker-special-notes"></span>
-            </div>
-        </div>
-        <hr class="divider">
-        <div class="payments-expenses">
-            <h3>Payments/Expenses</h3>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th></th>
-                        <th>Paid Amount</th>
-                        <th>Reserved Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <th>Indemnity</th>
-                        <td><span id="payment-indemnity-paid"></span></td>
-                        <td><span id="payment-indemnity-reserved"></span></td>
-                    </tr>
-                    <tr>
-                        <th>Expenses</th>
-                        <td><span id="payment-expenses-paid"></span></td>
-                        <td><span id="payment-expenses-reserved"></span></td>
-                    </tr>
-                    <tr>
-                        <th>Subrogation</th>
-                        <td><span id="payment-subrogation-paid"></span></td>
-                        <td><span id="payment-subrogation-reserved"></span></td>
-                    </tr>
-                    <tr>
-                        <th>Reinsurance</th>
-                        <td><span id="payment-reinsurance-paid"></span></td>
-                        <td><span id="payment-reinsurance-reserved"></span></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <div class="claim-details">
-            <h3>Claim Details</h3>
-            <div class="marker-duration">
-                <strong>Claim Duration:</strong> <span id="marker-duration"></span>
-            </div>
-            <div class="marker-date-reported">
-                <strong>Date Reported:</strong> <span id="marker-date-reported"></span>
-            </div>
-            <div class="marker-date-closed">
-                <strong>Date Closed:</strong> <span id="marker-date-closed"></span>
-            </div>
-        </div>
-    </div>
-
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
 
     <script>
@@ -289,14 +210,10 @@
         let responseDiv;
         let response;
         let elevator;
-        // Define an array of marker colors
-        const markerColors = ["red", "blue", "yellow"];
 
         function initMap() {
-            const stateFilter = document.getElementById("state-filter");
-            stateFilter.addEventListener("change", function () {
-                filterMarkersByState(this.value);
-            });
+            stateFilter = document.getElementById("state-filter");
+            priorityFilter = document.getElementById("priority-filter");
 
             map = new google.maps.Map(document.getElementById("map"), {
                 zoom: 4,
@@ -396,143 +313,7 @@
         }
 
 
-        /*
-            Create a geocoded marker for some arbitrary address
-            
-            This address can be inputted in two ways:
-            1. Directly type the address into the search bar and press "Geocode"
-            2. Upload a dataset that contains address and it will automatically geocode them
-
-            There is also an information window available for each marker that contains:
-            1. Address
-            2. Elevation
-            3. Other basic geospatial data
-
-        */
-        // function geocode(request) {
-        //     geocoder
-        //         .geocode(request)
-        //         .then((result) => {
-        //             const { results } = result;
-
-        //             if (results.length > 0) {
-        //                 const location = results[0].geometry.location;
-        //             }
-
-        //             markerColor = setMarkerColor(results[30])
-
-        //             // Create a new marker with the selected color
-        //             const newMarker = new google.maps.Marker({
-        //                 map,
-        //                 position: location,
-        //                 icon: {
-        //                     url: "http://maps.google.com/mapfiles/ms/icons/" + markerColor + "-dot.png",
-        //                     fillColor: markerColor,
-        //                     fillOpacity: 1,
-        //                     strokeWeight: 0,
-        //                     scale: 8,
-        //                 },
-        //             });
-        //             newMarker.set("state", result[29]); // Where state appears in the DS
-        //             // Inside the addMarker function
-        //             marker.addListener("click", function () {
-        //                 // Set marker information
-        //                 // document.getElementById("marker-address").textContent = location.address;
-        //                 // document.getElementById("marker-contact").textContent = location.contact;
-        //                 // document.getElementById("marker-priority").textContent = location.priority;
-        //                 // document.getElementById("marker-status").textContent = location.status;
-        //                 // document.getElementById("marker-claim-type").textContent = location.claimType;
-        //                 // document.getElementById("marker-carrier").textContent = location.carrier;
-        //                 // document.getElementById("marker-agency").textContent = location.agency;
-        //                 document.getElementById("marker-claim-id").textContent = result[35];
-        //                 // document.getElementById("marker-adjuster").textContent = location.adjuster;
-        //                 // document.getElementById("marker-agent-phone").textContent = location.agentPhone;
-        //                 // document.getElementById("marker-special-notes").textContent = location.specialNotes;
-
-        //                 // Set payments/expenses information
-        //                 document.getElementById("payment-indemnity-paid").textContent = result[23];
-        //                 document.getElementById("payment-indemnity-reserved").textContent = result[30];
-        //                 document.getElementById("payment-expenses-paid").textContent = result[24];
-        //                 // document.getElementById("payment-expenses-reserved").textContent = location.payments.expenses.reserved;
-        //                 // document.getElementById("payment-subrogation-paid").textContent = location.payments.subrogation.paid;
-        //                 document.getElementById("payment-subrogation-reserved").textContent = result[31];
-        //                 // document.getElementById("payment-reinsurance-paid").textContent = location.payments.reinsurance.paid;
-        //                 // document.getElementById("payment-reinsurance-reserved").textContent = location.payments.reinsurance.reserved;
-
-        //                 // Set claim details
-        //                 // document.getElementById("marker-duration").textContent = location.duration;
-        //                 document.getElementById("marker-date-reported").textContent = result[7];
-        //                 // document.getElementById("marker-date-closed").textContent = location.dateClosed;
-        //             });
-
-        //             //marker.push(newMarker);
-        //         })
-        //         .catch((e) => {
-        //             alert("Geocode was not successful for the following reason: " + e);
-        //         });
-        // }
-
-        function geocode(request) {
-            geocoder
-                .geocode(request)
-                .then((result) => {
-                const { results } = result;
-
-                // Create a new marker for each geocode result
-                const newMarker = new google.maps.Marker({
-                    map,
-                    position: results[0].geometry.location
-                });
-
-                const location = {lat: results[0].geometry.location.lat(), lng: results[0].geometry.location.lng()};
-                elevator.getElevationForLocations({
-                    'locations': [location]
-                }, function(results, status) {
-                    if (status === 'OK') {
-                        // Retrieve the first returned result
-                        if (results[0]) {
-                            // Create an infowindow for each marker with elevation
-                            const infowindow = new google.maps.InfoWindow({
-                                content: "Address: " + request.address + "<br>Elevation: " + results[0].elevation + " meters"
-                            });
-
-                            // Attach the infowindow to marker click event
-                            newMarker.addListener('click', function() {
-                                infowindow.open(map, newMarker);
-                            });
-                        } else {
-                            alert('No results found');
-                        }
-                    } else {
-                        alert('Elevation service failed due to: ' + status);
-                    }
-                });
-                responseDiv.style.display = "block";
-                response.innerText = JSON.stringify(result, null, 2);
-            })
-                .catch((e) => {
-                alert("Geocode was not successful for the following reason: " + e);
-            });
-        }
-
-        function setMarkerColor(claimAmount) {
-            let markerColor;
-
-            if (claimAmount < 200000) {
-                markerColor = "red";
-            } else if (claimAmount >= 200000 && claimAmount <= 250000) {
-                markerColor = "blue";
-            } else {
-                markerColor = "yellow";
-            }
-
-            return markerColor;
-        }
-
-
-        /*
-            After a file has been uploaded to the web app, we will parse the dataset to find the address information. For now, the dataset will be contains within an Excel sheet.
-        */
+        //After a file has been uploaded to the web app, we will parse the dataset to find the address information. For now, the dataset will be contains within an Excel sheet.
         document.getElementById('getFile').addEventListener('change', function (evt) {
             let file = evt.target.files[0];
             let reader = new FileReader();
@@ -546,35 +327,117 @@
                 // Convert to JSON
                 let json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-                // Assume zip code is in the first column and add country code
+                // Assume columns are structured/shaped like the index of the column(listed as row)
                 let zipCodes = json.map(row => row[33] + ", US");
+                let claimAmount = json.map(row => row[30]);
+                let state = json.map(row => row[29]);
+                let dateOfLoss = json.map(row => row[7]); // I will truncate this later
+                
+                
 
-                // Geocode each zip code
+                stateChoice = stateFilter.value;
+                priorityColor = priorityFilter.value;
+                let markerColor;
+                let counter = 0;
+                // Geocode each zip code and marker color
+                //TODO: make this next line chunky
                 zipCodes.forEach(zipCode => {
-                    geocode({'address': zipCode});
+                    let amount = parseInt(claimAmount[counter]);
+                    let currentState = state[counter];
+
+                    // Determine the priority level
+                    if (amount < 150000) {
+                        markerColor = "red";
+                    } else if (amount >= 150000 && amount < 250000) {
+                        markerColor = "blue";
+                    } else {
+                        markerColor = "yellow";
+                    }
+
+                    // Filter visibility
+                    if ((stateChoice === "" || stateChoice === currentState) && (priorityColor === "" || priorityColor === markerColor)) {
+                        //TODO: make this next line chunky, handle your data before the next line
+                        geocode({ 'address': zipCode }, markerColor);
+                    }
+
+                    // Stays at the end
+                    counter = counter + 1;
                 });
             };
             reader.readAsArrayBuffer(file);
         }, false);
 
-        function filterMarkersByState(state) {
-            markers.forEach(function (marker) {
-                const markerState = marker.get("state");
-                if (state === "" || markerState === state) {
-                    marker.setVisible(true);
-                } else {
-                    marker.setVisible(false);
-                }
-            });
-        }
+        //TODO: make this next line chunky
+        function geocode(request, markerColor) {
+            geocoder
+                .geocode(request)
+                .then((result) => {
+                    const { results } = result;
+                    const newMarker = new google.maps.Marker({
+                        map,
+                        position: results[0].geometry.location,
+                        icon: {
+                            url: "http://maps.google.com/mapfiles/ms/icons/" + markerColor + "-dot.png",
+                            fillColor: markerColor,
+                            fillOpacity: 1,
+                            strokeWeight: 0,
+                            scale: 8,
+                        },
+                    });
 
+                    const location = { lat: results[0].geometry.location.lat(), lng: results[0].geometry.location.lng() };
+                    elevator.getElevationForLocations({
+                        'locations': [location]
+                    }, function (results, status) {
+                        if (status === 'OK') {
+                            // Retrieve the first returned result
+                            if (results[0]) {
+                                // Create an infowindow for each marker with elevation
+                                //TODO: Make this chunky
+                                const infowindow = new google.maps.InfoWindow({
+                                    content: "<h2>Marker Information</h2>"
+                                    + "<br>Address: " + request.address 
+                                    + "<br>Elevation: " + results[0].elevation + " meters" 
+                                    + "<br>Contact: "
+                                    + "<br>Priority: "
+                                    + "<br>Status: "
+                                    + "<br>Claim Type: "
+                                    + "<br>Insurance Carrier: "
+                                    + "<br>Insurance Agency: "
+                                    + "<br>Claim ID: "
+                                    + "<br>Adjuster: "
+                                    + "<br>Agent Phone: "
+                                    + "<br>Special Notes: "
+                                    + "<br>Date Reported: "
+                                    + "<br>Date Closed: "
+                                });
+
+                                // Attach the infowindow to marker click event
+                                newMarker.addListener('click', function () {
+                                    infowindow.open(map, newMarker);
+                                });
+                            } else {
+                                alert('No results found');
+                            }
+                        } else {
+                            alert('Elevation service failed due to: ' + status);
+                        }
+                    });
+                    responseDiv.style.display = "block";
+                    response.innerText = JSON.stringify(result, null, 2);
+                    newMarker.setVisible()
+                })
+                .catch((e) => {
+                    alert("Geocode was not successful for the following reason: " + e);
+                });
+        }
         window.initMap = initMap;
 
-        function mainToggle(){
+        function mainToggle() {
             window.location = 'main.html';
         }
 
-        function logout(){
+        function logout() {
             window.location = 'index.html';
         }
 
