@@ -331,33 +331,102 @@
                 let zipCodes = json.map(row => row[33] + ", US");
                 let claimAmount = json.map(row => row[30]);
                 let state = json.map(row => row[29]);
-                let dateOfLoss = json.map(row => row[7]); // I will truncate this later
-                
-                
+                let censusTract = json.map(row => row[11]); // phone number placeholder
+                let floodZone = json.map(row => row[12]);
+                let locationOfContents = json.map(row => row[12]);
+                let amountPaidOnBuildingClaim = json.map(row => row[23]);
+                let amountPaidOnContentsClaim = json.map(row => row[24]);
+                let totalBuildingInsuranceCoverage = json.map(row => row[30]);
+                let totalContentsInsuranceCoverage = json.map(row => row[31]);
+                let claim_ID = json.map(row => row[35]);
+                let FIRMConstruction = json.map(row => row[26]);
+                let rateMethod = json.map(row => row[27]);
+                // I will truncate these later, sub string method?
+                let dateOfLoss = json.map(row => row[7]); 
+                let originalNBDate = json.map(row => row[22]);
+                let originalConstructionDate = json.map(row =>row[21]);
+                let asOfDate = json.map(row => row[2]);
 
                 stateChoice = stateFilter.value;
                 priorityColor = priorityFilter.value;
                 let markerColor;
                 let counter = 0;
-                // Geocode each zip code and marker color
-                //TODO: make this next line chunky
+                // Geocode each zip code and marker color with data fields attached
                 zipCodes.forEach(zipCode => {
                     let amount = parseInt(claimAmount[counter]);
                     let currentState = state[counter];
+                    let contact = censusTract[counter]; // looks like a phone #
+                    let priorityLevel = "";
+                    let claimType = floodZone[counter];
+                    let insuranceAgency = locationOfContents[counter]; // Agency placeholder
+                    let paidBuilding = amountPaidOnBuildingClaim[counter];
+                    let paidContents = amountPaidOnContentsClaim[counter];
+                    let totalBuildingCoverage = totalBuildingInsuranceCoverage[counter];
+                    let totalContentsCoverage = totalContentsInsuranceCoverage[counter];
+                    let claimID = claim_ID[counter];
+                    let insuranceCarrier = FIRMConstruction[counter]; // placeholder for actual carrier
+                    let rate = rateMethod[counter];
+                    let dateRep = dateOfLoss[counter];
+                    let closeDate = asOfDate[counter];
+                    let constructionDate = originalConstructionDate[counter];
+
+                    // Our undefined checkers
+                    if (paidBuilding === undefined) {
+                        paidBuilding = 0;
+                    }
+                    if (paidContents === undefined) {
+                        paidContents = 0;
+                    }
+
+                    //Truncate dates
+                    // let temp = dateRep;
+                    // dateRep = temp.substring(0, 10);
+                    // temp = closeDate;
+                    // closeDate = temp.substring(0, 10);
+                    // temp = constructionDate;
+                    // constructionDate = temp.substring(0, 10);
+
+                    // Good insurance companies
+                    if (insuranceCarrier > 1) {
+                        insuranceCarrier = "US Insurance";
+                    } else {
+                        insuranceCarrier = "Nationwide Insurance"
+                    }
+
+                    // Determine the agency type
+                    if (insuranceAgency > 2) {
+                        insuranceAgency = "Private Insurance";
+                    } else if (insuranceAgency > 0) {
+                        insuranceAgency = "State Insurance";
+                    } else {
+                        insuranceAgency = "National Insurance";
+                    }
+
+                    // Determine the claim type
+                    if (claimType === "X") {
+                        claimType = "Flood damge";
+                    } else if (claimType === "AE") {
+                        claimType = "Accidental";
+                    } else {
+                        claimType = "Other";
+                    }
 
                     // Determine the priority level
                     if (amount < 150000) {
                         markerColor = "red";
+                        priorityLevel = "Low";
                     } else if (amount >= 150000 && amount < 250000) {
                         markerColor = "blue";
+                        priorityLevel = "Medium";
                     } else {
                         markerColor = "yellow";
+                        priorityLevel = "High";
                     }
 
                     // Filter visibility
-                    if ((stateChoice === "" || stateChoice === currentState) && (priorityColor === "" || priorityColor === markerColor)) {
-                        //TODO: make this next line chunky, handle your data before the next line
-                        geocode({ 'address': zipCode }, markerColor);
+                    if ((claimID != "id") && ((stateChoice === "" || stateChoice === currentState) && (priorityColor === "" || priorityColor === markerColor))) {
+                        //TODO: make this next line chunky, handle your data before this next line
+                        geocode({ 'address': zipCode }, markerColor, dateRep, contact, priorityLevel, claimType, insuranceAgency, closeDate, paidBuilding, paidContents, totalBuildingCoverage, totalContentsCoverage, claimID, rate, insuranceCarrier, constructionDate);
                     }
 
                     // Stays at the end
@@ -368,7 +437,7 @@
         }, false);
 
         //TODO: make this next line chunky
-        function geocode(request, markerColor) {
+        function geocode(request, markerColor, dateRep, contact, priorityLevel, claimType, insuranceAgency, closeDate, paidBuilding, paidContents, totalBuildingCoverage, totalContentsCoverage, claimID, rate, insuranceCarrier, constructionDate) {
             geocoder
                 .geocode(request)
                 .then((result) => {
@@ -396,20 +465,25 @@
                                 //TODO: Make this chunky
                                 const infowindow = new google.maps.InfoWindow({
                                     content: "<h2>Marker Information</h2>"
-                                    + "<br>Address: " + request.address 
-                                    + "<br>Elevation: " + results[0].elevation + " meters" 
-                                    + "<br>Contact: "
-                                    + "<br>Priority: "
-                                    + "<br>Status: "
-                                    + "<br>Claim Type: "
-                                    + "<br>Insurance Carrier: "
-                                    + "<br>Insurance Agency: "
-                                    + "<br>Claim ID: "
-                                    + "<br>Adjuster: "
-                                    + "<br>Agent Phone: "
-                                    + "<br>Special Notes: "
-                                    + "<br>Date Reported: "
-                                    + "<br>Date Closed: "
+                                        + "<br><strong>Address:</strong> " + request.address
+                                        + "<br><strong>Elevation:</strong> " + results[0].elevation + " meters"
+                                        + "<br><strong>Contact:</strong> " + contact
+                                        + "<br><strong>Priority:</strong> " + priorityLevel
+                                        + "<br><strong>Status:</strong> Closed" // default, source- Chase
+                                        + "<br><strong>Claim Type:</strong> " + claimType
+                                        + "<br><strong>Insurance Carrier:</strong> " + insuranceCarrier
+                                        + "<br><strong>Insurance Agency:</strong> " + insuranceAgency
+                                        + "<br><strong>Claim ID:</strong> "+ claimID
+                                        + "<br><strong>Adjuster:</strong> " + rate
+                                        + "<br><strong>Agent Phone:</strong> " + contact
+                                        + "<br><strong>Special Notes:</strong> "
+                                        + "<br><strong>Total Coverage on Building:</strong> $" + totalBuildingCoverage
+                                        + "<br><strong>Amount Paid on Building:</strong> $" + paidBuilding
+                                        + "<br><strong>Total Coverage on Contents:</strong> $" + totalContentsCoverage
+                                        + "<br><strong>Amount Paid on Contents:</strong> $" + paidContents
+                                        + "<br><strong>Original Construction Date:</strong> " + constructionDate
+                                        + "<br><strong>Date Reported:</strong> " + dateRep
+                                        + "<br><strong>Date Closed:</strong> " + closeDate
                                 });
 
                                 // Attach the infowindow to marker click event
