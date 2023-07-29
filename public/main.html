@@ -101,7 +101,7 @@
               attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             }).addTo(lMap);
 
-            L.tileLayer('http://tile.openweathermap.org/map/rain/{z}/{x}/{y}.png?appid=03b59f22b39cdb724a4d685e36742726', {
+            L.tileLayer('http://tile.openweathermap.org/map/rain/{z}/{x}/{y}.png?appid=<YOUR_OPENWEATHER_APP_ID>', {
               maxZoom: 19,
               zIndex: 5
             }).addTo(lMap);
@@ -363,7 +363,7 @@
     * 4. Places API
     -->
 
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyALD1en8iLwvWaeQfkmhKiq5fcFT9TegbQ&callback=initMap"></script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=<YOUR_API_KEY>&callback=initMap"></script>
 
     <!-- This is OPTIONAL JS scripts for Popper and Bootstrap -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
